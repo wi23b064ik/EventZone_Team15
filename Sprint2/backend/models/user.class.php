@@ -1,0 +1,87 @@
+<?php
+class User {
+    private $conn;
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    public function register($data) {
+        $stmt = $this->conn->prepare("
+            INSERT INTO users (salutation, firstname, surname, address, plz, postalCode, email, username, passwordh, paymentInfo) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        
+        $stmt->bind_param("ssssssssss",
+            $data['salutation'],
+            $data['firstName'],
+            $data['surname'],
+            $data['address'],
+            $data['plz'],
+            $data['postalCode'],
+            $data['email'],
+            $data['username'],
+            $data['passwordh'],
+            $data['paymentInfo']
+        );
+        $success = $stmt->execute();
+
+        if (!$success) {
+            error_log("MYSQL ERROR: " . $stmt->error);
+        }
+    
+        return $success;
+    }
+
+    public function login($username, $password) {
+        try {
+            // Log login attempt
+            error_log("Attempting login for user: $username");
+            
+            $stmt = $this->conn->prepare("
+                SELECT id, username, email, passwordh, status
+                FROM users 
+                WHERE (username = ? OR email = ?) AND status = 'active'
+            ");
+            
+            if (!$stmt) {
+                error_log("Prepare failed: " . $this->conn->error);
+                return false;
+            }
+            
+            $stmt->bind_param("ss", $username, $username);
+            
+            if (!$stmt->execute()) {
+                error_log("Execute failed: " . $stmt->error);
+                return false;
+            }
+            
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 0) {
+                error_log("No user found with username/email: $username");
+                return false;
+            }
+            
+            $user = $result->fetch_assoc();
+            
+            if (!$user) {
+                error_log("Failed to fetch user data");
+                return false;
+            }
+            
+            if (password_verify($password, $user['passwordh'])) {
+                error_log("Password verified successfully for user: $username");
+                unset($user['passwordh']);
+                return $user;
+            }
+            
+            error_log("Invalid password for user: $username");
+            return false;
+        } catch (Exception $e) {
+            error_log("Login error: " . $e->getMessage());
+            return false;
+        }
+    }
+}
+?>
