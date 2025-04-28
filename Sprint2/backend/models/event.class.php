@@ -9,7 +9,7 @@ class Event {
     public function getEvents($category = null) {
         try {
             $sql = "SELECT id, name, description, DATE_FORMAT(date, '%M %d, %Y') as date, 
-                    price, image, capacity, category FROM events";
+                    price, images, capacity, category FROM events";
             
             if ($category) {
                 $sql .= " WHERE category = ?";
@@ -43,36 +43,38 @@ class Event {
             error_log("Error fetching events: " . $e->getMessage());
             return [
                 'status' => 'error',
-                'message' => 'Error fetching events'
+                'message' => 'Error fetching events',
             ];
         }
     }
 
     public function createEvent($data) {
         try {
-            $sql = "INSERT INTO events (name, description, date, price, image, capacity) 
-                    VALUES (?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO events (name, description, date, price, images, capacity, category) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)"; // 'category' hinzugefügt!
             $stmt = $this->conn->prepare($sql);
-            
+    
             if (!$stmt) {
-                throw new Exception($this->conn->error);
+                throw new Exception("Prepare failed: " . $this->conn->error);
             }
-
-            $image = $data['image'] ?? 'default-event.jpg';
-            
-            $stmt->bind_param("sssdsi", 
+    
+            $images = $data['images'] ?? 'default-event.jpg';
+            $category = $data['category'] ?? null;
+    
+            $stmt->bind_param("sssdsis", 
                 $data['name'],
                 $data['description'],
                 $data['date'],
                 $data['price'],
-                $image,
-                $data['capacity']
+                $images,
+                $data['capacity'],
+                $category
             );
-
+    
             if (!$stmt->execute()) {
-                throw new Exception($stmt->error);
+                throw new Exception("Execute failed: " . $stmt->error);
             }
-
+    
             return [
                 'status' => 'success',
                 'message' => 'Event created successfully',
@@ -82,10 +84,11 @@ class Event {
             error_log("Error creating event: " . $e->getMessage());
             return [
                 'status' => 'error',
-                'message' => 'Error creating event'
+                'message' => 'Error creating event: ' . $e->getMessage() // <-- Detaillierte Fehlerausgabe
             ];
         }
     }
+    
 
     public function validateEventData($data) {
         $errors = [];
@@ -116,19 +119,77 @@ class Event {
     }
 
     public function updateEvent($id, $data) {
-        // TODO: Implement update functionality
-        return [
-            'status' => 'error',
-            'message' => 'Update functionality not implemented'
-        ];
+        try {
+            $sql = "UPDATE events 
+                    SET name = ?, description = ?, date = ?, price = ?, images = ?, capacity = ?, category = ?
+                    WHERE id = ?";
+    
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception($this->conn->error);
+            }
+    
+            $images = $data['images'] ?? 'default-event.jpg';
+            $category = $data['category'] ?? null;
+    
+            $stmt->bind_param(
+                "sssdsisi",
+                $data['name'],
+                $data['description'],
+                $data['date'],
+                $data['price'],
+                $images,
+                $data['capacity'],
+                $category,
+                $id
+            );
+    
+            if (!$stmt->execute()) {
+                throw new Exception($stmt->error);
+            }
+    
+            return [
+                'status' => 'success',
+                'message' => 'Event updated successfully'
+            ];
+        } catch (Exception $e) {
+            error_log("Error updating event: " . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Error updating event',
+                'debug' => $e->getMessage()
+            ];
+        }
     }
+    
+    
 
     public function deleteEvent($id) {
-        // TODO: Implement delete functionality
-        return [
-            'status' => 'error',
-            'message' => 'Delete functionality not implemented'
-        ];
+        try {
+            $sql = "DELETE FROM events WHERE id = ?";
+            $stmt = $this->conn->prepare($sql);
+    
+            if (!$stmt) {
+                throw new Exception("Prepare failed: " . $this->conn->error);
+            }
+    
+            $stmt->bind_param("i", $id);
+    
+            if (!$stmt->execute()) {
+                throw new Exception("Execution failed: " . $stmt->error);
+            }
+    
+            return [
+                'status' => 'success',
+                'message' => 'Event deleted successfully'
+            ];
+        } catch (Exception $e) {
+            error_log("Delete Event Error: " . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Failed to delete event'
+            ];
+        }
     }
 }
 ?>

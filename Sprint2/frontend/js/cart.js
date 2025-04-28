@@ -109,27 +109,32 @@ function displayCartItems(items) {
     }
 
     const itemsHtml = items.map(item => {
+
+        const firstImage = (item.images || '')
+            .split(',')[0]       // split into [ "img1.jpg", "img2.jpg", … ]
+            .trim()              // remove any extra whitespace
+            || 'default-event.jpg';
         // Convert price to number if it's a string
         const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
         const totalPrice = price * item.quantity;
         
         return `
-            <div class="cart-item d-flex align-items-center p-3 border-bottom">
-                <img src="../res/img/${item.image}" alt="${item.name}" 
-                     class="me-3" style="width: 100px; height: 60px; object-fit: cover;">
+           <div class="cart-item d-flex align-items-center p-3 border-bottom">
+                <img src="../res/${firstImage}" alt="${item.name}"
+                     class="me-3" style="width:100px;height:60px;object-fit:cover;">
                 <div class="flex-grow-1">
                     <h6 class="mb-0">${item.name}</h6>
                     <small class="text-muted">${item.date}</small>
                     <div class="mt-1">€${price.toFixed(2)} per ticket</div>
                 </div>
                 <div class="d-flex align-items-center">
-                    <button class="btn btn-sm btn-outline-secondary" 
-                            onclick="updateQuantity(${item.eventId}, ${item.quantity - 1})">-</button>
+                    <button class="btn btn-sm btn-outline-secondary"
+                            onclick="updateQuantity(${item.eventId}, ${item.quantity - 1})">−</button>
                     <span class="mx-2">${item.quantity}</span>
-                    <button class="btn btn-sm btn-outline-secondary" 
+                    <button class="btn btn-sm btn-outline-secondary"
                             onclick="updateQuantity(${item.eventId}, ${item.quantity + 1})">+</button>
                     <span class="ms-3 me-3">€${totalPrice.toFixed(2)}</span>
-                    <button class="btn btn-sm btn-danger" 
+                    <button class="btn btn-sm btn-danger"
                             onclick="removeFromCart(${item.eventId})">
                         <i class="fas fa-trash"></i>
                     </button>
