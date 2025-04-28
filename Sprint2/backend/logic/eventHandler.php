@@ -4,6 +4,11 @@ header("Content-Type: application/json");
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+function isAdmin(): bool {
+    return isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'admin';
+}
+
+
 try {
     require_once '../config/dbaccess.php';
     require_once '../models/event.class.php';
@@ -33,6 +38,13 @@ try {
             break;
 
         case 'createEvent':
+            if (!isAdmin()) {
+                echo json_encode([
+                    'status'  => 'error',
+                    'message' => 'Permission denied'
+                ]);
+                break;
+            }
             // Validate event data
             $errors = $event->validateEventData($input);
             
@@ -50,6 +62,13 @@ try {
             break;
 
         case 'updateEvent':
+            if (!isAdmin()) {
+                echo json_encode([
+                    'status'  => 'error',
+                    'message' => 'Permission denied'
+                ]);
+                break;
+            }
             if (empty($input['id'])) {
                 echo json_encode([
                     "status" => "error",
@@ -63,6 +82,13 @@ try {
             break;
 
         case 'deleteEvent':
+            if (!isAdmin()) {
+                echo json_encode([
+                    'status'  => 'error',
+                    'message' => 'Permission denied'
+                ]);
+                break;
+            }
             if (empty($input['id'])) {
                 echo json_encode([
                     "status" => "error",
