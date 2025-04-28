@@ -38,6 +38,14 @@ try {
             echo json_encode($result);
             break;
 
+        case 'addToCart':
+            if (!isset($input['eventId']) || !isset($input['quantity'])) {
+                throw new Exception("Event ID and quantity are required");
+            }
+            $result = $cart->addToCart($userId, $input['eventId'], $input['quantity']);
+            echo json_encode($result);
+            break;
+
         case 'removeFromCart':
             if (!isset($input['eventId'])) {
                 throw new Exception("Event ID is required");
