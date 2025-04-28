@@ -141,6 +141,41 @@ try {
             'message' => 'Logged out successfully'
         ]);
     }
+    elseif ($action === 'getAllUsers') {
+        if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
+            echo json_encode([
+                "status" => "error",
+                "message" => "Not authorized"
+            ]);
+            exit;
+        }
+    
+        $user = new User($conn);
+        $users = $user->getAllUsers();
+        echo json_encode([
+            "status" => "success",
+            "users" => $users
+        ]);
+    }
+    elseif ($action === 'deleteUser') {
+        if (isset($input['id'])) {
+            $user = new User($conn);
+            $result = $user->deleteUser($input['id']);
+            echo json_encode($result);
+        } else {
+            echo json_encode([
+                "status" => "error",
+                "message" => "User ID is required"
+            ]);
+        }
+    } else {
+        echo json_encode([
+            "status" => "error",
+            "message" => "Invalid action"
+        ]);
+    }
+    
+    
 } catch (Exception $e) {
     error_log("System error: " . $e->getMessage());
     echo json_encode([
@@ -148,4 +183,5 @@ try {
         "message" => "System error occurred"
     ]);
 }
+
 ?>

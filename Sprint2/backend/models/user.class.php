@@ -39,7 +39,7 @@ class User {
             error_log("Attempting login for user: $username");
             
             $stmt = $this->conn->prepare("
-                SELECT id, username, email, passwordh, status
+                SELECT id, username, email, passwordh, status, role
                 FROM users 
                 WHERE (username = ? OR email = ?) AND status = 'active'
             ");
@@ -83,5 +83,33 @@ class User {
             return false;
         }
     }
+    public function getAllUsers() {
+        $stmt = $this->conn->prepare("SELECT id, username, email, role, firstName, surname FROM users");
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $users[] = $row;
+        }
+        return $users;
+    }
+    
+    public function deleteUser($id) {
+        $stmt = $this->conn->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        if ($stmt->execute()) {
+            return [
+                "status" => "success",
+                "message" => "User deleted"
+            ];
+        } else {
+            return [
+                "status" => "error",
+                "message" => "Failed to delete user"
+            ];
+        }
+    }
+    
 }
 ?>
